@@ -1,75 +1,43 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import moSalah from '@/assets/images/licensed-image.jpeg';
+import { View, Text, StyleSheet, ImageBackground, Pressable } from 'react-native';
+import {Link} from 'expo-router'
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function Index() {
 
-export default function HomeScreen() {
+  
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    <View style={styles.container}>
+      <ImageBackground
+      source={moSalah}
+      resizeMode='cover'
+      style={{ width: '100%', height: 800 }}>
+      <Text style={styles.text}>index.js</Text>
+      <Link href="/explore" asChild>
+      <Pressable style={styles.button}><Text style={styles.text}>Explore</Text></Pressable></Link>
+      </ImageBackground>
+    </View>
+  )
 }
 
+
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    flexDirection: 'column',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  text:{
+    color: 'white',
+    fontSize: 42,
+    textAlign: 'center',
+    marginTop: 50,
+    backgroundColor: 'rgba(200, 200, 220, 1)',
+    padding: 4
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
+  button: {
+    margin: 'auto',
+    width: 200,
+    borderRadius: 30,
+    padding: 6,
+    bottom: 200
+  }
+})
