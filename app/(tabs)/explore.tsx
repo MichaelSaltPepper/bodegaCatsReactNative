@@ -1,4 +1,3 @@
-import { bucket, db, supabaseUrl } from ",,/../components/db/db";
 import { MaterialIcons } from "@expo/vector-icons";
 import type { Cat, Pin } from "constants/DataTypes";
 import * as ImagePicker from "expo-image-picker";
@@ -11,7 +10,9 @@ import {
   FlatList,
   Image,
   Keyboard,
+  Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -19,17 +20,25 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import CustomModal from "../../components/CustomModal";
+import {
+  bucket,
+  db,
+  supabaseAnonKey,
+  supabaseUrl,
+} from "../../components/db/db";
 
-const bucketDownloadURL = `${supabaseUrl}/functions/v1/storage-upload`;
+const bucketUploadURL = `${supabaseUrl}/functions/v1/upload-images`;
 const UNNAMED_CAT = "Anonymous Kiity Car 🐱🐈🚗";
-
-// I need to create a Flatlist that will render the fetched cat data
-// I'm only fetching pins originally
-
-// create a
-
-// how should cat fetching work?
-// start by retrieving all cats
+const mimeTypes: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+};
+// TODO only allow to add cats if signed in
+// TODO display preview of cat submissions
 
 export default function App() {
   const [expanded, setExpanded] = useState(true);
@@ -45,8 +54,46 @@ export default function App() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [uploadImages, setUploadImages] = useState<string[]>([]);
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [catHasName, setCatHasName] = useState(false);
+  const [catHasDescription, setCatHasDescription] = useState(false);
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [previewImageUri, setPreviewImageUri] = useState<string>("");
+  const [locationHintModalVisible, setLocationHintModalVisible] =
+    useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  function resetUI() {
+    setNewMarker(null);
+    setExpanded(true);
+    setBoxShift(false);
+    setConfirmLocation(false);
+    setName("");
+    setDescription("");
+    setUploadImages([]);
+    setCatHasName(false);
+    setCatHasDescription(false);
+    setAddingCat(false);
+  }
+
+  useEffect(() => {
+    // initial check
+    async function checkUser() {
+      const userRes = await db.auth.getUser();
+      setSignedIn(!!userRes.data.user);
+    }
+    checkUser();
+
+    // listen for auth state changes
+    const { data: listener } = db.auth.onAuthStateChange((event, _) => {
+      if (event === "SIGNED_IN") setSignedIn(true);
+      else if (event === "SIGNED_OUT") setSignedIn(false);
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
   useEffect(() => {
     Animated.timing(animation, {
       toValue: expanded ? 1 : 0,
@@ -65,7 +112,7 @@ export default function App() {
 
   const height = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, boxShift ? 400 : 300], // collapsed height -> expanded height
+    outputRange: [0, boxShift ? 500 : 300], // collapsed height -> expanded height
   });
 
   async function retrieveCats() {
@@ -158,8 +205,78 @@ export default function App() {
     console.log("Description:", description);
     console.log("Images:", uploadImages);
 
+    // form valudation
+    if (uploadImages.length === 0) {
+      Alert.alert("Please select at least one image.");
+      return;
+    }
+    if (!catHasName && name.trim().length === 0) {
+      Alert.alert("Cannot have an empty name");
+      return;
+    }
+    if (!catHasDescription && description.trim().length === 0) {
+      Alert.alert("Cannot have an empty description");
+      return;
+    }
     // TODO use anonkey to upload image
+    // need to insert the images into the bucket first
+    // once that is done, I can create db entries for all of them
+    async function foo() {
+      const newFileNames: string[] = new Array(uploadImages.length);
+      for (let index = 0; index < uploadImages.length; index++) {
+        const uri = uploadImages[index];
+        const formData = new FormData();
+        const filename = uri.split("/").pop() || "file";
+        const extension = filename.split(".").pop()?.toLowerCase() || "";
+        const mimeType = mimeTypes[extension] || "application/octet-stream";
+
+        formData.append("file", {
+          uri,
+          name: filename,
+          type: mimeType,
+        } as any);
+
+        const response = await fetch(bucketUploadURL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${supabaseAnonKey}`,
+          },
+          body: formData,
+        });
+        if (!response) {
+          Alert.alert("Failed upload");
+        }
+        const result = await response.json();
+        console.log("Uploaded file data:", result.data);
+        console.log("result", result);
+        newFileNames[index] = result.data.path;
+      }
+      console.log("ending file names", newFileNames);
+      // create entries in submissions for each cat uploaded
+      const { data, error } = await db
+        .from("Submission") // your table name
+        .insert([
+          {
+            lat: newMarker?.lat,
+            lng: newMarker?.lng,
+            name: name.trim(),
+            description: description.trim(),
+            file_names: newFileNames.join(","),
+          },
+        ]);
+      console.log("submission", data);
+      console.log("error", error);
+      if (error) {
+        Alert.alert("Error: Unable to create new submissino entry");
+      } else {
+        Alert.alert("Successfully submitted");
+      }
+    }
+    foo();
+
+    resetUI();
   };
+  // TODO display user pending submissions in another tab
 
   const CatItem = ({ cat }: { cat: Cat }) => (
     <View style={{ marginBottom: 20 }}>
@@ -216,31 +333,54 @@ export default function App() {
           );
         })}
       </MapView>
+      <CustomModal
+        visible={locationHintModalVisible}
+        onClose={() => setLocationHintModalVisible(false)}
+      >
+        <View style={{ alignItems: "center", marginBottom: 10 }}>
+          <Text style={{ fontWeight: "bold", fontSize: 18, marginBottom: 5 }}>
+            Tip from Whiskers!
+          </Text>
+          <View>
+            <Text style={{ fontSize: 18 }}>☝️</Text>
+            <Text style={{ fontSize: 18 }}>{" ".repeat(3)}\🐱</Text>
+            <Text style={{ fontSize: 18 }}>{" ".repeat(5)} |\</Text>
+            <Text style={{ fontSize: 18, marginBottom: 35 }}>
+              {" ".repeat(5)}/\
+            </Text>
+          </View>
+          <Text style={{ fontSize: 18 }}>
+            Press and hold on the blue marker to drag it
+          </Text>
+        </View>
+      </CustomModal>
       <View
         style={[
           styles.buttonContainer,
           addingCat ? styles.buttonBad : styles.buttonGood,
         ]}
       >
-        <Button
-          title={!addingCat ? "Add Cat" : "Cancel"}
-          color={addingCat ? "white" : "blue"}
-          onPress={() => {
-            if (addingCat) {
-              setNewMarker(null);
-              setExpanded(true);
-              setBoxShift(false);
-              setConfirmLocation(false);
-              setName("");
-              setDescription("");
-              setUploadImages([]);
-            } else {
-              setNewMarker({ lat: 40.8, lng: -73.93, id: -1, created_at: "" }); // only one “pending” marker
-              setExpanded(false);
-            }
-            setAddingCat(!addingCat);
-          }}
-        />
+        {signedIn && (
+          <Button
+            title={!addingCat ? "Add Cat" : "Cancel"}
+            color={addingCat ? "white" : "blue"}
+            onPress={() => {
+              if (addingCat) {
+                resetUI();
+              } else {
+                setNewMarker({
+                  lat: 40.8,
+                  lng: -73.93,
+                  id: -1,
+                  created_at: "",
+                }); // only one “pending” marker
+                setExpanded(false);
+                setLocationHintModalVisible(true); // show modal with location hint
+              }
+              setAddingCat(!addingCat);
+            }}
+          />
+        )}
       </View>
       {addingCat && (
         <View style={[styles.buttonContainer2, styles.buttonConfirm]}>
@@ -259,8 +399,16 @@ export default function App() {
         </View>
       )}
 
-      <View style={{ ...styles.containerBottom, bottom: boxShift ? 150 : 100 }}>
-        <Pressable onPress={() => setExpanded(!expanded)}>
+      <ScrollView
+        style={{ ...styles.containerBottom, bottom: boxShift ? 90 : 100 }}
+      >
+        <Pressable
+          onPress={() => {
+            if (!(addingCat && !confirmLocation)) {
+              setExpanded(!expanded);
+            }
+          }}
+        >
           <View
             style={{
               position: "relative",
@@ -279,52 +427,146 @@ export default function App() {
           </View>
         </Pressable>
         <Animated.View style={[styles.box, { height }]}>
-          <Text>{addingCat ? "New Cat Details" : "All Cats View"}</Text>
+          <Text>
+            {addingCat ? "New Cat Details" : "All Cats View"}
+            {signedIn ? "true" : "flase"}
+          </Text>
 
           <View style={{ display: addingCat && expanded ? "flex" : "none" }}>
-            <View>
-              <Switch value={isEnabled} onValueChange={setIsEnabled} />
-              <Text style={{ marginLeft: 8 }}>{isEnabled ? "No" : "Yes"}</Text>
+            <View
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 10,
+                marginTop: 10,
+              }}
+            >
               <Text style={styles.label}>Name</Text>
+              <Switch
+                style={{ marginLeft: 15, marginRight: 10 }}
+                value={catHasName}
+                onValueChange={(new_val) => {
+                  setCatHasName(new_val);
+                  setName(""); // reset name if switching to "has name"
+                }}
+              />
+              <Text style={{ marginLeft: 8 }}>{catHasName ? "No" : "Yes"}</Text>
             </View>
-            {!isEnabled ? (
+            <View style={{ marginBottom: 10 }}>
+              {!catHasName ? (
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  // onChangeText={setName}
+                  onChangeText={(text) => {
+                    setName(text.substring(0, 50));
+                  }}
+                  placeholder="Enter Name"
+                  returnKeyType="done"
+                  onSubmitEditing={() => {
+                    Keyboard.dismiss();
+                  }}
+                />
+              ) : (
+                <Text
+                  style={{
+                    height: styles.input.height,
+                    lineHeight: styles.input.height,
+                  }}
+                >
+                  {UNNAMED_CAT}
+                </Text>
+              )}
+            </View>
+            <View
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 10,
+                marginTop: 10,
+              }}
+            >
+              <Text style={styles.label}>Description</Text>
+              <Switch
+                style={{ marginLeft: 15, marginRight: 10 }}
+                value={catHasDescription}
+                onValueChange={(new_val) => {
+                  setCatHasDescription(new_val);
+                  if (new_val) {
+                    setDescription(""); // reset description if switching to "has description"
+                  }
+                }}
+              />
+              <Text style={{ marginLeft: 8 }}>
+                {catHasDescription ? "No" : "Yes"}
+              </Text>
+            </View>
+
+            {!catHasDescription ? (
               <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="Enter Name"
+                style={[styles.input, { height: 65 }]}
+                value={description}
+                onChangeText={(text) => setDescription(text.substring(0, 250))}
+                placeholder="Enter description"
                 returnKeyType="done"
+                multiline
+                blurOnSubmit={true}
                 onSubmitEditing={() => {
                   Keyboard.dismiss();
                 }}
               />
             ) : (
-              <Text>{UNNAMED_CAT}</Text>
+              <Text>No Description</Text>
             )}
 
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              style={[styles.input, { height: 65 }]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Enter description"
-              returnKeyType="done"
-              multiline
-              blurOnSubmit={true}
-              onSubmitEditing={() => {
-                Keyboard.dismiss();
-              }}
-            />
-
             <Button title="Pick Images" onPress={pickImage} />
-
-            {uploadImages.map((uri, index) => (
-              <Image
-                key={index}
-                source={{ uri }}
-                style={{ width: 100, height: 100, marginRight: 10 }}
-              />
-            ))}
+            <View
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 10,
+                marginTop: 10,
+              }}
+            >
+              {uploadImages.map((uri, index) => (
+                <Pressable
+                  key={index}
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                  onPress={() => {
+                    setModalVisible(true);
+                    setPreviewImageUri(uri);
+                  }}
+                >
+                  <Image
+                    source={{ uri }}
+                    style={{ width: 100, height: 100, marginRight: 10 }}
+                  />
+                </Pressable>
+              ))}
+            </View>
+            <Modal
+              visible={modalVisible}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <Pressable
+                style={styles.modalBackground}
+                onPress={() => setModalVisible(false)}
+              >
+                <Image
+                  source={{ uri: previewImageUri }}
+                  style={{ width: "90%", height: "90%", resizeMode: "contain" }}
+                />
+              </Pressable>
+            </Modal>
 
             <Button title="Submit" onPress={submitForm} />
           </View>
@@ -336,7 +578,7 @@ export default function App() {
             renderItem={({ item }) => <CatItem cat={item} />}
           />
         </Animated.View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -385,5 +627,19 @@ const styles = StyleSheet.create({
     padding: 2,
     marginBottom: 5,
     borderRadius: 5,
+    height: 30,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: 250,
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+    alignItems: "center",
   },
 });
