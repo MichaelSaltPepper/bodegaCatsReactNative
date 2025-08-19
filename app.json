@@ -9,14 +9,27 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.michaelsaltpepper.learn",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "learn",
+              "com.michaelsaltpepper.learn",
+              "com.googleusercontent.apps.331869008608-fdajk1vkuu0ttfd0vdq4gutg72ntq1co"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.michaelsaltpepper.learn"
     },
     "web": {
       "bundler": "metro",
@@ -25,6 +38,11 @@
     },
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f16e1f4b-ad42-4533-ba42-bc7392f11555"
+      }
     }
   }
 }

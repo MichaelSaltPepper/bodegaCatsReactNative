@@ -1,4 +1,4 @@
-package com.anonymous.learn
+package com.michaelsaltpepper.learn
 
 import android.app.Application
 import android.content.res.Configuration

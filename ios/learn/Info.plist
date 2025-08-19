@@ -28,7 +28,14 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>learn</string>
-          <string>com.anonymous.learn</string>
+          <string>com.michaelsaltpepper.learn</string>
+          <string>com.googleusercontent.apps.331869008608-fdajk1vkuu0ttfd0vdq4gutg72ntq1co</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+learn</string>
         </array>
       </dict>
     </array>
@@ -45,10 +52,12 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
-    <key>NSUserActivityTypes</key>
-    <array>
-      <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
-    </array>
+    <key>NSCameraUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your camera</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your photos</string>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

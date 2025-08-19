@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.learn'
+    namespace 'com.michaelsaltpepper.learn'
     defaultConfig {
-        applicationId 'com.anonymous.learn'
+        applicationId 'com.michaelsaltpepper.learn'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

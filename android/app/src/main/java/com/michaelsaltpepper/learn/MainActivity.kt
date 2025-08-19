@@ -1,4 +1,4 @@
-package com.anonymous.learn
+package com.michaelsaltpepper.learn
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

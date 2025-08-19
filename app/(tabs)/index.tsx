@@ -1,111 +1,106 @@
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Button,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { signIn, signUp } from "../../components/auth";
+import { Alert, Button, View } from "react-native";
 import { db } from "../../components/db/db";
+// TODO allow switching from prod and dev
+// TODO create users based on whether an existing
+// already exists
+// TODO update submission to include the status
+// TODO handle failure if the user enters an already existing user id
 
-// TODO sign-user in immediately once they make an account
-// TODO make app compatible with key chain passwords
-// TODO allow users to reset passwords
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+} from "@react-native-google-signin/google-signin";
 
-const Index = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSigningUp, setIsSigningUp] = useState(false);
+function Index() {
   const [signedIn, setSignedIn] = useState(false);
 
-  // Check if user is already signed in
   useEffect(() => {
-    async function checkUser() {
-      const userRes = await db.auth.getUser();
-      if (userRes.data.user) setSignedIn(true);
+    async function initAuth() {
+      // Get the current Supabase session
+      const session = await db.auth.getSession();
+
+      if (session.data.session) {
+        setSignedIn(true);
+
+        // Check if provider is Google
+      } else {
+        setSignedIn(false);
+      }
     }
-    checkUser();
+
+    initAuth();
+
+    // Listen for auth state changes (SIGN_IN / SIGN_OUT)
+    const { data: listener } = db.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN") {
+        setSignedIn(true);
+      } else if (event === "SIGNED_OUT") {
+        setSignedIn(false);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
-  const handleAuth = async () => {
-    if (isSigningUp) {
-      const { data, error } = await signUp(email, password);
-      if (error) Alert.alert("Sign-up Error", error.message);
-      else
-        Alert.alert(
-          "Success",
-          `Account created for ${data.user?.email}. Please verify your email if required.`
-        );
-    } else {
-      const { data, error } = await signIn(email, password);
-      if (error) Alert.alert("Sign-in Error", error.message);
-      else {
-        Alert.alert("Success", `Logged in as ${data.user?.email}`);
-        setSignedIn(true);
+  const signIn = async () => {
+    try {
+      // Configure Google Sign-In right before login
+      GoogleSignin.configure({
+        iosClientId:
+          "331869008608-fdajk1vkuu0ttfd0vdq4gutg72ntq1co.apps.googleusercontent.com",
+      });
+
+      // Trigger native Google Sign-In flow
+      await GoogleSignin.signIn();
+      const tokens = await GoogleSignin.getTokens();
+
+      // Send ID token to Supabase
+      const { data, error } = await db.auth.signInWithIdToken({
+        provider: "google",
+        token: tokens.idToken,
+      });
+
+      if (error) {
+        console.error(error);
+      } else {
+        const supabaseUserId = data.user.id;
       }
+    } catch (err) {
+      console.error("Google Sign-In failed:", err);
     }
   };
 
   const handleSignOut = async () => {
-    const { error } = await db.auth.signOut();
-    if (error) Alert.alert("Error", error.message);
-    else setSignedIn(false);
+    try {
+      await GoogleSignin.signOut();
+      await db.auth.signOut();
+      Alert.alert("Signed out", "You have been signed out of Google");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      Alert.alert("Error", "Something went wrong while signing out");
+    }
   };
 
-  if (signedIn) {
-    return (
-      <View style={{ padding: 20 }}>
-        <Text>Welcome! You are signed in.</Text>
-        <Button title="Sign Out" onPress={handleSignOut} />
-      </View>
-    );
-  }
-
   return (
-    <View style={{ padding: 20, backgroundColor: "white" }}>
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        style={{
-          marginBottom: 10,
-          borderWidth: 1,
-          padding: 5,
-          borderRadius: 5,
-        }}
-      />
-      <TextInput
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={{
-          marginBottom: 10,
-          borderWidth: 1,
-          padding: 5,
-          borderRadius: 5,
-        }}
-      />
-      <Button
-        title={isSigningUp ? "Sign Up" : "Sign In"}
-        onPress={handleAuth}
-      />
-      <TouchableOpacity
-        style={{ marginTop: 10 }}
-        onPress={() => setIsSigningUp(!isSigningUp)}
-      >
-        <Text style={{ color: "blue" }}>
-          {isSigningUp
-            ? "Already have an account? Sign In"
-            : "Don't have an account? Sign Up"}
-        </Text>
-      </TouchableOpacity>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center", // vertical centering
+        alignItems: "center", // horizontal centering
+        bottom: 50,
+      }}
+    >
+      {!signedIn && (
+        <GoogleSigninButton
+          size={GoogleSigninButton.Size.Wide}
+          color={GoogleSigninButton.Color.Dark}
+          onPress={signIn}
+        />
+      )}
+      {signedIn && <Button title="Sign Out" onPress={handleSignOut} />}
     </View>
   );
-};
+}
 
 export default Index;

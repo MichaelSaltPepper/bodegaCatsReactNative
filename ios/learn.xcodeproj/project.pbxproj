@@ -257,7 +257,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.anonymous.learn";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.michaelsaltpepper.learn";
 				PRODUCT_NAME = "learn";
 				SWIFT_OBJC_BRIDGING_HEADER = "learn/learn-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -286,7 +286,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.anonymous.learn";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.michaelsaltpepper.learn";
 				PRODUCT_NAME = "learn";
 				SWIFT_OBJC_BRIDGING_HEADER = "learn/learn-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;

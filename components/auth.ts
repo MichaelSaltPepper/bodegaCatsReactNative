@@ -20,3 +20,7 @@ export const getUser = async () => {
   const { data } = await db.auth.getUser();
   return data.user;
 };
+
+export const authClientId =
+  "331869008608-fdajk1vkuu0ttfd0vdq4gutg72ntq1co.apps.googleusercontent.com";
+// com.googleusercontent.apps.331869008608-fdajk1vkuu0ttfd0vdq4gutg72ntq1co
