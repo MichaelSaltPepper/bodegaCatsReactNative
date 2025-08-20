@@ -1,4 +1,4 @@
-import { createUserName } from "@/constants/createUserName";
+import { createUserName } from "constants/createUserName";
 import type { User } from "constants/DataTypes";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, Text, View } from "react-native";
@@ -15,7 +15,7 @@ import {
   GoogleSigninButton,
 } from "@react-native-google-signin/google-signin";
 
-function Index() {
+export default function Index() {
   const [signedIn, setSignedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
@@ -188,5 +188,3 @@ function Index() {
     </View>
   );
 }
-
-export default Index;

@@ -1,3 +1,6 @@
+import DoubleSwitch from "@/components/DoubleSwitch";
+import { getStatusEmoji } from "@/components/Utils/Utils";
+import { SubmissionStatus } from "@/constants/FrontEndContansts";
 import type { Submission } from "constants/DataTypes";
 import { UNNAMED_CAT } from "constants/DataTypes";
 import { useEffect, useState } from "react";
@@ -11,7 +14,6 @@ import {
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { db } from "../../components/db/db";
-
 // display all submissions for the current user
 
 // TODO allow displaying of multiple images for cats in explore
@@ -75,25 +77,15 @@ const Third = () => {
     }
   }
 
-  function getStatusEmoji(status: string): string {
-    let emoji = "";
-
-    switch (status) {
-      case "accepted":
-        emoji = "✅";
-        break;
-      case "rejected":
-        emoji = "❌";
-        break;
-      case "pending":
-        emoji = "➖";
-        break;
-      default:
-        emoji = "❓"; // optional for unknown status
-    }
-
-    return emoji;
-  }
+  const makeNewSubmissionProps = (
+    index: number,
+    newValue: SubmissionStatus,
+    prevSubmissions: Submission[]
+  ) => {
+    const newSubmissions = [...prevSubmissions];
+    newSubmissions[index].status = newValue;
+    return newSubmissions;
+  };
 
   const SubmissionItem = ({
     submission,
@@ -108,6 +100,32 @@ const Third = () => {
         alignItems: "center",
       }}
     >
+      <View style={{ flexDirection: "row" }}>
+        <DoubleSwitch
+          onBothEnabled={() =>
+            setSubmissions((prevSubmissions) =>
+              makeNewSubmissionProps(
+                index,
+                SubmissionStatus.Rejected,
+                prevSubmissions
+              )
+            )
+          }
+          title={"Reject"}
+        />
+        <DoubleSwitch
+          onBothEnabled={() =>
+            setSubmissions((prevSubmissions) =>
+              makeNewSubmissionProps(
+                index,
+                SubmissionStatus.Accepted,
+                prevSubmissions
+              )
+            )
+          }
+          title={"Accept"}
+        />
+      </View>
       <Text>
         Status: {submission.status} {getStatusEmoji(submission.status)}
       </Text>
@@ -136,12 +154,11 @@ const Third = () => {
       <View>
         {submission.file_names.split(",").map((file_name, i) => {
           return imageUrls[file_name] ? (
-            <View>
+            <View key={file_name}>
               <Text style={{ fontSize: 18, fontWeight: "bold", bottom: 5 }}>
                 {i + 1}.
               </Text>
               <Image
-                key={file_name}
                 source={{ uri: imageUrls[file_name] }}
                 style={{
                   width: 300,
