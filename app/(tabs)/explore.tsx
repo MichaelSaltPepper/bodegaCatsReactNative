@@ -1,5 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import type { Cat, Pin } from "constants/DataTypes";
+import { UNNAMED_CAT } from "constants/DataTypes";
 import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -29,7 +30,6 @@ import {
 } from "../../components/db/db";
 
 const bucketUploadURL = `${supabaseUrl}/functions/v1/upload-images`;
-const UNNAMED_CAT = "Anonymous Kiity Car 🐱🐈🚗";
 const mimeTypes: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -132,6 +132,7 @@ export default function App() {
           id: row.id,
           name: row.name,
           file_name: row.file_name,
+          user_id: row.user_id,
         }));
         console.log("cats", newCats);
         setCats(newCats);
@@ -218,9 +219,6 @@ export default function App() {
       Alert.alert("Cannot have an empty description");
       return;
     }
-    // TODO use anonkey to upload image
-    // need to insert the images into the bucket first
-    // once that is done, I can create db entries for all of them
     async function foo() {
       const newFileNames: string[] = new Array(uploadImages.length);
       for (let index = 0; index < uploadImages.length; index++) {
@@ -253,6 +251,13 @@ export default function App() {
       }
       console.log("ending file names", newFileNames);
       // create entries in submissions for each cat uploaded
+      const { data: sessionData } = await db.auth.getSession();
+      let user_id = "";
+      if (sessionData?.session) {
+        user_id = sessionData.session.user.id;
+      } else {
+        throw Error("Should have an id if logged in");
+      }
       const { data, error } = await db
         .from("Submission") // your table name
         .insert([
@@ -262,6 +267,7 @@ export default function App() {
             name: name.trim(),
             description: description.trim(),
             file_names: newFileNames.join(","),
+            user_id,
           },
         ]);
       console.log("submission", data);
