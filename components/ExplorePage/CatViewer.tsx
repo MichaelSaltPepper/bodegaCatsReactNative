@@ -130,6 +130,8 @@ export const CatViewer: React.FC<CatViewerProps> = ({
       </Pressable>
       <Animated.View style={[styles.box, { height }]}>
         <Text>
+          {" "}
+          TODO useQUETY
           {addingCat ? "New Cat Details" : "All Cats View"}
           {signedIn ? "true" : "flase"}
         </Text>

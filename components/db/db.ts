@@ -7,7 +7,10 @@ import {
   supabaseAnonKey,
   supabaseUrl,
 } from "../Utils/Credentials";
-import { mimeTypes } from "../Utils/FrontEndContanstsAndUtils";
+import {
+  mimeTypes,
+  SubmissionStatus,
+} from "../Utils/FrontEndContanstsAndUtils";
 export const db = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
@@ -67,11 +70,14 @@ export async function insertCat(submission: Submission, pin_id: number) {
   }
 }
 
-export async function updateSubmission(submission: Submission) {
+export async function updateSubmission(
+  submission: Submission,
+  status: SubmissionStatus
+) {
   const { data, error } = await db
     .from("Submission")
     .update({
-      status: submission.status,
+      status,
     })
     .eq("id", submission.id);
   if (error) {
@@ -203,11 +209,13 @@ export async function deletePinAndCat(
 
   if (selectError) {
     console.error("Error selecting cat:", selectError);
+    Alert.alert("Error selecting cat");
     return false;
   }
 
   if (!cats || cats.length === 0) {
-    console.log("No matching cat found.");
+    Alert.alert("succesfully delted pin and cat");
+    Alert.alert("no matching cat");
     return false;
   }
 
@@ -220,7 +228,7 @@ export async function deletePinAndCat(
     .eq("id", cat.id);
 
   if (deleteCatError) {
-    console.error("Error deleting cat:", deleteCatError);
+    Alert.alert("Error deleting dat:" + deleteCatError);
     return false;
   }
 
@@ -231,7 +239,7 @@ export async function deletePinAndCat(
     .eq("id", cat.pin_id);
 
   if (deletePinError) {
-    console.error("Error deleting pin:", deletePinError);
+    Alert.alert("Error deleting pin:" + deletePinError);
     return false;
   }
   Alert.alert("succesfully delted pin and cat");

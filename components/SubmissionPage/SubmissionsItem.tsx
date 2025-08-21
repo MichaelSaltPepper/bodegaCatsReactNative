@@ -1,44 +1,51 @@
+import type {
+  QueryObserverResult,
+  RefetchOptions,
+} from "@tanstack/react-query";
 import { Image, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import type { Submission } from "../DataTypes";
-import { bucket, supabaseUrl } from "../Utils/Credentials";
-import {
-  SubmissionStatus,
-  UNNAMED_CAT,
-} from "../Utils/FrontEndContanstsAndUtils";
-import DoubleSwitch from "./DoubleSwitch";
-
 import {
   deletePinAndCat,
   insertCat,
   insertPin,
   updateSubmission,
 } from "../db/db";
-
-const makeNewSubmissionProps = (
-  index: number,
-  newValue: SubmissionStatus,
-  prevSubmissions: Submission[]
-) => {
-  const newSubmissions = [...prevSubmissions];
-  newSubmissions[index].status = newValue;
-  return newSubmissions;
-};
+import { bucket, supabaseUrl } from "../Utils/Credentials";
+import {
+  SubmissionStatus,
+  UNNAMED_CAT,
+} from "../Utils/FrontEndContanstsAndUtils";
+import DoubleSwitch from "./DoubleSwitch";
+type refetchType = (options?: RefetchOptions | undefined) => Promise<
+  QueryObserverResult<
+    {
+      submissions: Submission[];
+      isAdmin: boolean;
+    },
+    Error
+  >
+>;
 
 export const SubmissionItem = ({
   submission,
   index,
   submissions,
   isAdmin,
+  refetch,
 }: {
   submission: Submission;
   index: number;
   submissions: Submission[];
   isAdmin: boolean;
+  refetch: refetchType;
 }) => {
-  async function submissionAction(submission: Submission) {
-    updateSubmission(submission);
-    if (submission.status === SubmissionStatus.Accepted) {
+  async function submissionAction(
+    newSubmissionStatus: SubmissionStatus,
+    submission: Submission
+  ) {
+    updateSubmission(submission, newSubmissionStatus);
+    if (newSubmissionStatus === SubmissionStatus.Accepted) {
       const new_pin_id = await insertPin(submission.lat, submission.lng);
       await insertCat(submission, new_pin_id);
       console.log("ENDING OF CREATION OF NEW CAT AND PIN");
@@ -50,6 +57,7 @@ export const SubmissionItem = ({
       //if I have a result then delete that cat and pin
       await deletePinAndCat(submission);
     }
+    refetch();
   }
   return (
     <View
@@ -62,39 +70,21 @@ export const SubmissionItem = ({
         <View style={{ flexDirection: "row" }}>
           <DoubleSwitch
             onBothEnabled={() => {
-              setSubmissions((prevSubmissions: Submission[]) => {
-                const newSubValues = makeNewSubmissionProps(
-                  index,
-                  SubmissionStatus.Rejected,
-                  prevSubmissions
-                );
-                // update status to rejected
-                submissionAction(newSubValues[index]);
-                return newSubValues;
-              });
+              submissionAction(SubmissionStatus.Rejected, submission);
             }}
             title={"Reject"}
           />
           <DoubleSwitch
             onBothEnabled={() => {
-              setSubmissions((prevSubmissions) => {
-                const newSubValues = makeNewSubmissionProps(
-                  index,
-                  SubmissionStatus.Accepted,
-                  prevSubmissions
-                );
-                // update status to accepted
-                // create entriy in Pin, get the new pin_id
-                // create new entry in Cat
-                submissionAction(newSubValues[index]);
-                return newSubValues;
-              });
+              //   // create entriy in Pin, get the new pin_id
+              //   // create new entry in Cat
+
+              submissionAction(SubmissionStatus.Accepted, submission);
             }}
             title={"Accept"}
           />
         </View>
       )}
-      {/* TODO allow sbumission mutations */}
       <Text>
         TODODODODODOD submissions update Name:{" "}
         {submission.name.length > 0 ? submission.name : UNNAMED_CAT}

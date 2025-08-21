@@ -78,10 +78,12 @@ const Third = () => {
         data={submissions.filter((s) => s.status === selectedOption)}
         renderItem={({ item, index }) => (
           <SubmissionItem
+            key={item.id}
             submission={item}
             index={index}
             submissions={submissions}
             isAdmin={isAdmin}
+            refetch={refetch}
           />
         )}
       />
