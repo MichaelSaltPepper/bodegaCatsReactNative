@@ -3,7 +3,6 @@ import { SubmissionStatus } from "@/constants/FrontEndContansts";
 import { UNNAMED_CAT } from "constants/DataTypes";
 
 import DoubleSwitch from "@/components/DoubleSwitch";
-import { getStatusEmoji } from "@/components/Utils/Utils";
 import { ActivityIndicator, Image, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import {
@@ -97,9 +96,6 @@ export const SubmissionItem = ({
         </View>
       )}
       <Text>
-        Status: {submission.status} {getStatusEmoji(submission.status)}
-      </Text>
-      <Text>
         Name: {submission.name.length > 0 ? submission.name : UNNAMED_CAT}
       </Text>
       <Text style={{ marginBottom: 15 }}>
@@ -126,7 +122,7 @@ export const SubmissionItem = ({
           return imageUrls[file_name] ? (
             <View key={file_name}>
               <Text style={{ fontSize: 18, fontWeight: "bold", bottom: 5 }}>
-                {i + 1}.
+                {i + 1}/{submission.file_names.split(",").length}
               </Text>
               <Image
                 source={{ uri: imageUrls[file_name] }}
@@ -143,6 +139,14 @@ export const SubmissionItem = ({
           );
         })}
       </View>
+      <View
+        style={{
+          height: 1, // line thickness
+          backgroundColor: "gray", // line color
+          width: "100%", // span full width
+          marginVertical: 10, // optional spacing above/below
+        }}
+      />
     </View>
   );
 };

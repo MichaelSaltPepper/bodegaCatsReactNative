@@ -1,10 +1,11 @@
 import { useUpload } from "@/components/context/UploadContext";
 import { SubmissionItem } from "@/components/SubmissionsItem";
+import { TopSelector } from "@/components/TopSelector";
+import { SubmissionStatus } from "@/constants/FrontEndContansts";
 import type { Submission } from "constants/DataTypes";
 import { useEffect, useState } from "react";
 import { FlatList, View } from "react-native";
 import { db, fetchSubmissionsForUser } from "../../components/db/db";
-
 // for CatViewer and this page
 // I want to be able to make the other update itself
 // update CatViewer on Accept/Reject
@@ -17,6 +18,9 @@ const Third = () => {
   const [signedIn, setSignedIn] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<string>(
+    SubmissionStatus.Pending
+  ); // default selection
 
   // retrive cats when signedIn changes
   async function retrieveSubmissions() {
@@ -102,9 +106,14 @@ const Third = () => {
         padding: 15,
       }}
     >
+      <TopSelector
+        options={Object.values(SubmissionStatus)}
+        selected={selectedOption}
+        setSelected={setSelectedOption}
+      />
       <FlatList
         keyExtractor={(submission: Submission) => submission.id.toString()}
-        data={submissions}
+        data={submissions.filter((s) => s.status === selectedOption)}
         renderItem={({ item, index }) => (
           <SubmissionItem
             submission={item}
