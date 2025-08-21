@@ -1,198 +1,30 @@
-import DoubleSwitch from "@/components/DoubleSwitch";
-import { getStatusEmoji } from "@/components/Utils/Utils";
-import { SubmissionStatus } from "@/constants/FrontEndContansts";
+import { SubmissionItem } from "@/components/SubmissionsItem";
 import type { Submission } from "constants/DataTypes";
-import { UNNAMED_CAT } from "constants/DataTypes";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  Text,
-  View,
-} from "react-native";
-import MapView, { Marker } from "react-native-maps";
-import {
-  db,
-  deletePinAndCat,
-  insertCat,
-  insertPin,
-  updateSubmission,
-} from "../../components/db/db";
+import { FlatList, View } from "react-native";
+import { db, fetchSubmissionsForUser } from "../../components/db/db";
+
+// for CatViewer and this page
+// I want to be able to make the other
+// update itself
+// update CatViewer on Accept/Reject
+// update this when a new cat is submitted
+// also create admin credentials
+// so I can manage all cats from my account
 
 const bucket = "dev";
 const Third = () => {
-  // TODO make submissions show up right after submitting
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [signedIn, setSignedIn] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-
-  async function submissionAction(submission: Submission) {
-    updateSubmission(submission);
-    if (submission.status === SubmissionStatus.Accepted) {
-      const new_pin_id = await insertPin(submission.lat, submission.lng);
-      await insertCat(submission, new_pin_id);
-      console.log("ENDING OF CREATION OF NEW CAT AND PIN");
-    } else {
-      // delete pin and cat if already created
-      // select cat_id, pin_id from inner join between cat and submission
-      // on submission.file_names = cat.file_name (and I only have access to
-      // submission originally )
-      //if I have a result then delete that cat and pin
-      await deletePinAndCat(submission);
-    }
-  }
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // retrive cats when signedIn changes
   async function retrieveSubmissions() {
-    try {
-      // setLoading(true)
-      // if (!session?.user) throw new Error('No user on the session!')
-      const { data: sessionData } = await db.auth.getSession();
-      let userId = "";
-      if (sessionData?.session) {
-        userId = sessionData.session.user.id;
-        console.log("Supabase user ID:", userId);
-      } else {
-        return;
-      }
-      const { data, error, status } = await db
-        .from("Submission")
-        .select("*")
-        .eq("user_id", userId);
-      console.log("data", data);
-      if (error && status !== 406) {
-        throw error;
-      }
-      if (data) {
-        console.log("success");
-        const mySubmissions: Submission[] = data.map((row: Submission) => ({
-          id: row.id,
-          lat: row.lat,
-          lng: row.lng,
-          name: row.name,
-          description: row.description,
-          file_names: row.file_names,
-          status: row.status,
-          user_id: row.user_id,
-        }));
-        console.log("submissions", mySubmissions);
-        setSubmissions(mySubmissions);
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        Alert.alert(error.message);
-      }
-    }
+    const { submissions, isAdmin } = await fetchSubmissionsForUser();
+    setSubmissions(submissions);
+    setIsAdmin(isAdmin);
   }
-
-  const makeNewSubmissionProps = (
-    index: number,
-    newValue: SubmissionStatus,
-    prevSubmissions: Submission[]
-  ) => {
-    const newSubmissions = [...prevSubmissions];
-    newSubmissions[index].status = newValue;
-    return newSubmissions;
-  };
-
-  const SubmissionItem = ({
-    submission,
-    index,
-  }: {
-    submission: Submission;
-    index: number;
-  }) => (
-    <View
-      style={{
-        marginBottom: index === submissions.length - 1 ? 120 : 20,
-        alignItems: "center",
-      }}
-    >
-      <View style={{ flexDirection: "row" }}>
-        <DoubleSwitch
-          onBothEnabled={() => {
-            setSubmissions((prevSubmissions) => {
-              const newSubValues = makeNewSubmissionProps(
-                index,
-                SubmissionStatus.Rejected,
-                prevSubmissions
-              );
-              // update status to rejected
-              submissionAction(newSubValues[index]);
-              return newSubValues;
-            });
-          }}
-          title={"Reject"}
-        />
-        <DoubleSwitch
-          onBothEnabled={() => {
-            setSubmissions((prevSubmissions) => {
-              const newSubValues = makeNewSubmissionProps(
-                index,
-                SubmissionStatus.Accepted,
-                prevSubmissions
-              );
-              // update status to accepted
-              // create entriy in Pin, get the new pin_id
-              // create new entry in Cat
-              submissionAction(newSubValues[index]);
-              return newSubValues;
-            });
-          }}
-          title={"Accept"}
-        />
-      </View>
-      <Text>
-        Status: {submission.status} {getStatusEmoji(submission.status)}
-      </Text>
-      <Text>
-        Name: {submission.name.length > 0 ? submission.name : UNNAMED_CAT}
-      </Text>
-      <Text style={{ marginBottom: 15 }}>
-        Description:{" "}
-        {submission.description.length > 0
-          ? submission.description
-          : "No description"}
-      </Text>
-      <MapView
-        style={{ width: 300, height: 300, marginBottom: 30 }}
-        initialRegion={{
-          latitude: submission.lat,
-          longitude: submission.lng,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
-        }}
-      >
-        <Marker
-          coordinate={{ latitude: submission.lat, longitude: submission.lng }}
-        />
-      </MapView>
-      <View>
-        {submission.file_names.split(",").map((file_name, i) => {
-          return imageUrls[file_name] ? (
-            <View key={file_name}>
-              <Text style={{ fontSize: 18, fontWeight: "bold", bottom: 5 }}>
-                {i + 1}.
-              </Text>
-              <Image
-                source={{ uri: imageUrls[file_name] }}
-                style={{
-                  width: 300,
-                  height: 300,
-                  resizeMode: "cover",
-                  marginBottom: 30,
-                }}
-              />
-            </View>
-          ) : (
-            <ActivityIndicator key={file_name} />
-          );
-        })}
-      </View>
-    </View>
-  );
 
   // fetch links for images when cats change
   useEffect(() => {
@@ -241,6 +73,7 @@ const Third = () => {
       // initialize the cats
       retrieveSubmissions();
     }
+    setIsAdmin(false);
   }, [signedIn]);
 
   const fetchSignedImageUrl = async (file_path: string) => {
@@ -267,7 +100,14 @@ const Third = () => {
         keyExtractor={(submission: Submission) => submission.id.toString()}
         data={submissions}
         renderItem={({ item, index }) => (
-          <SubmissionItem submission={item} index={index} />
+          <SubmissionItem
+            submission={item}
+            index={index}
+            submissions={submissions}
+            isAdmin={isAdmin}
+            setSubmissions={setSubmissions}
+            imageUrls={imageUrls}
+          />
         )}
       />
     </View>

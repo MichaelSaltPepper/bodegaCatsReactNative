@@ -39,6 +39,7 @@ export default function Index() {
           const currUser: User[] = data.map((row: User) => ({
             user_name: row.user_name,
             user_id: row.user_id,
+            is_admin: row.is_admin,
           }));
           setUser(currUser[0]);
         }
@@ -61,7 +62,7 @@ export default function Index() {
     });
 
     return () => listener.subscription.unsubscribe();
-  }, []);
+  }, [setUser, user]);
 
   useEffect(() => {}, []);
 
@@ -102,6 +103,7 @@ export default function Index() {
             const newUser: User[] = data.map((row: User) => ({
               user_name: row.user_name,
               user_id: row.user_id,
+              is_admin: row.is_admin,
             }));
 
             if (newUser.length === 0) {
@@ -135,6 +137,7 @@ export default function Index() {
               setUser({
                 user_id: supabaseUserId,
                 user_name: newUserName,
+                is_admin: false,
               });
             } else {
               // set the user name

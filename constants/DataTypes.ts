@@ -7,7 +7,7 @@ export type Cat = {
   file_name: string;
   user_id: string;
 };
-export type User = { user_id: string; user_name: string };
+export type User = { user_id: string; user_name: string; is_admin: boolean };
 export type Submission = {
   id: number;
   lat: number;

@@ -1,4 +1,4 @@
-import type { Cat, Pin, Submission } from "@/constants/DataTypes";
+import type { Cat, Pin, Submission, User } from "@/constants/DataTypes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import { Alert } from "react-native";
@@ -237,4 +237,83 @@ export async function deletePinAndCat(
   Alert.alert("succesfully delted pin and cat");
   console.log("Deleted cat", cat.id, "and pin", cat.pin_id);
   return true;
+}
+export async function getUserById(userId: string): Promise<User | null> {
+  try {
+    const { data, error, status } = await db
+      .from("User")
+      .select("*")
+      .eq("user_id", userId)
+      .single(); // returns a single row
+
+    if (error && status !== 406) {
+      throw error;
+    }
+
+    if (!data) return null;
+
+    // Map to your User type
+    const user: User = {
+      user_id: data.user_id,
+      user_name: data.user_name,
+      is_admin: data.is_admin,
+    };
+
+    return user;
+  } catch (err) {
+    console.error("Error fetching user:", err);
+    return null;
+  }
+}
+
+export async function fetchSubmissionsForUser(): Promise<{
+  submissions: Submission[];
+  isAdmin: boolean;
+}> {
+  try {
+    const { data: sessionData } = await db.auth.getSession();
+    if (!sessionData?.session) {
+      return { submissions: [], isAdmin: false };
+    }
+
+    const userId = sessionData.session.user.id;
+
+    // Retrieve user info
+    const user: User | null = await getUserById(userId);
+    const isAdmin = user?.is_admin ?? false;
+
+    let data, error, status;
+    if (isAdmin) {
+      ({ data, error, status } = await db.from("Submission").select("*"));
+    } else {
+      ({ data, error, status } = await db
+        .from("Submission")
+        .select("*")
+        .eq("user_id", userId));
+    }
+
+    if (error && status !== 406) {
+      throw error;
+    }
+
+    const submissions: Submission[] = data
+      ? data.map((row: Submission) => ({
+          id: row.id,
+          lat: row.lat,
+          lng: row.lng,
+          name: row.name,
+          description: row.description,
+          file_names: row.file_names,
+          status: row.status,
+          user_id: row.user_id,
+        }))
+      : [];
+
+    return { submissions, isAdmin };
+  } catch (err) {
+    if (err instanceof Error) {
+      Alert.alert(err.message);
+    }
+    return { submissions: [], isAdmin: false };
+  }
 }
