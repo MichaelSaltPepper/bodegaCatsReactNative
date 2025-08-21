@@ -1,4 +1,4 @@
-import { UserProvider } from "@/components/context/UserContext";
+import { UploadProvider } from "@/components/context/UploadContext";
 import {
   DarkTheme,
   DefaultTheme,
@@ -23,7 +23,7 @@ export default function RootLayout() {
   }
 
   return (
-    <UserProvider>
+    <UploadProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -33,6 +33,6 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
-    </UserProvider>
+    </UploadProvider>
   );
 }

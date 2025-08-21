@@ -5,10 +5,6 @@ import { Alert, Button, Text, View } from "react-native";
 import { db } from "../../components/db/db";
 
 // TODO allow switching from prod and dev
-// TODO create users based on whether an existing
-// already exists
-// TODO update submission to include the status
-// TODO handle failure if the user enters an already existing user id
 
 import {
   GoogleSignin,

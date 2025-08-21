@@ -1,3 +1,4 @@
+import { useUpload } from "@/components/context/UploadContext";
 import { SubmissionItem } from "@/components/SubmissionsItem";
 import type { Submission } from "constants/DataTypes";
 import { useEffect, useState } from "react";
@@ -5,15 +6,13 @@ import { FlatList, View } from "react-native";
 import { db, fetchSubmissionsForUser } from "../../components/db/db";
 
 // for CatViewer and this page
-// I want to be able to make the other
-// update itself
+// I want to be able to make the other update itself
 // update CatViewer on Accept/Reject
 // update this when a new cat is submitted
-// also create admin credentials
-// so I can manage all cats from my account
 
 const bucket = "dev";
 const Third = () => {
+  const { uploadCompleted, setUploadCompleted } = useUpload();
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [signedIn, setSignedIn] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -75,6 +74,13 @@ const Third = () => {
     }
     setIsAdmin(false);
   }, [signedIn]);
+
+  useEffect(() => {
+    if (uploadCompleted) {
+      retrieveSubmissions();
+      setUploadCompleted(false);
+    }
+  }, [uploadCompleted, setUploadCompleted]);
 
   const fetchSignedImageUrl = async (file_path: string) => {
     try {
