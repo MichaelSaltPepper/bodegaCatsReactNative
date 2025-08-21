@@ -78,7 +78,6 @@ export const SubmissionItem = ({
             onBothEnabled={() => {
               //   // create entriy in Pin, get the new pin_id
               //   // create new entry in Cat
-
               submissionAction(SubmissionStatus.Accepted, submission);
             }}
             title={"Accept"}

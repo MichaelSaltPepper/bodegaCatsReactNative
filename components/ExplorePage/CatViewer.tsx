@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   View,
+  ViewToken,
 } from "react-native";
 import { Cat, Pin } from "../DataTypes";
 import { bucket, supabaseUrl } from "../Utils/Credentials";
@@ -36,6 +37,9 @@ type CatViewerProps = {
   setUploadImages: (val: string[]) => void;
   setCatHasDescription: (val: boolean) => void;
   setAddingCat: (val: boolean) => void;
+  ref: React.RefObject<FlatList<any> | null>;
+  activeCatId: number;
+  setActiveCatId: React.Dispatch<React.SetStateAction<number>>;
 };
 
 export const CatViewer: React.FC<CatViewerProps> = ({
@@ -58,9 +62,13 @@ export const CatViewer: React.FC<CatViewerProps> = ({
   setDescription,
   setUploadImages,
   setCatHasDescription,
+  ref,
+  activeCatId,
+  setActiveCatId,
 }) => {
-  const CatItem = ({ cat }: { cat: Cat }) => (
+  const CatItem = ({ cat, index }: { cat: Cat; index: number }) => (
     <View style={{ marginBottom: 20 }}>
+      <Text>Cat ID: {cat.id}</Text>
       <Text>
         {cat.name.length === 0 ? UNNAMED_CAT : cat.name} -{" "}
         {cat.description.length === 0 ? "No description" : cat.description}
@@ -102,6 +110,16 @@ export const CatViewer: React.FC<CatViewerProps> = ({
     inputRange: [0, 1],
     outputRange: [0, boxShift ? 500 : 300], // collapsed height -> expanded height
   });
+
+  const onViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      console.log("viewableItems", viewableItems);
+      if (viewableItems.length > 0) {
+        const activeCatId = (viewableItems[0].item as Cat).id;
+        setActiveCatId(activeCatId);
+      }
+    }
+  ).current;
   return (
     <View style={{ ...styles.containerBottom, bottom: boxShift ? 90 : 100 }}>
       <Pressable
@@ -131,9 +149,9 @@ export const CatViewer: React.FC<CatViewerProps> = ({
       <Animated.View style={[styles.box, { height }]}>
         <Text>
           {" "}
-          TODO useQUETY
+          TODO useQUETY activeCatId{activeCatId}
           {addingCat ? "New Cat Details" : "All Cats View"}
-          {signedIn ? "true" : "flase"}
+          {signedIn ? "true" : "flase"} {cats.length} Cats loaded
         </Text>
 
         <CatUploadForm
@@ -153,10 +171,13 @@ export const CatViewer: React.FC<CatViewerProps> = ({
           setCatHasDescription={setCatHasDescription}
         />
         <FlatList
+          ref={ref}
+          // viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
           style={{ display: addingCat ? "none" : "flex" }}
+          onViewableItemsChanged={onViewableItemsChanged}
           keyExtractor={(cat: Cat) => cat.id.toString()}
           data={cats}
-          renderItem={({ item }) => <CatItem cat={item} />}
+          renderItem={({ item, index }) => <CatItem cat={item} index={index} />}
         />
         <Button title="debug" onPress={() => console.log("debug", cats)} />
       </Animated.View>

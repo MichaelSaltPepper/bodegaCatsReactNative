@@ -3,8 +3,8 @@ import { CatViewer } from "@/components/ExplorePage/CatViewer";
 import { Buttons } from "@/components/ExplorePage/Navigation/Buttons";
 import { UserHint } from "@/components/ExplorePage/Navigation/UserHint";
 import UserMap from "@/components/ExplorePage/UserMap";
-import React, { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { FlatList, StyleSheet, View } from "react-native";
 import { db, getPins, retrieveCats } from "../../components/db/db";
 
 export default function App() {
@@ -13,6 +13,8 @@ export default function App() {
   const [addingCat, setAddingCat] = useState(false);
   const [cats, setCats] = useState<Cat[]>([]);
   const [markers, setMarkers] = useState<Pin[]>([]);
+  const catViewerRef = useRef<FlatList>(null);
+  const [activeCatId, setActiveCatId] = useState(-1);
 
   const [boxShift, setBoxShift] = useState(false);
   const [confirmLocation, setConfirmLocation] = useState(false);
@@ -65,10 +67,15 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      {/* clicking on marker should open view on bottom */}
       <UserMap
         markers={markers}
         setNewMarker={setNewMarker}
         newMarker={newMarker}
+        ref={catViewerRef}
+        cats={cats}
+        activeCatId={activeCatId}
+        setExpanded={setExpanded}
       />
       <UserHint
         locationHintModalVisible={locationHintModalVisible}
@@ -108,6 +115,9 @@ export default function App() {
         setUploadImages={setUploadImages}
         setCatHasDescription={setCatHasDescription}
         setAddingCat={setAddingCat}
+        ref={catViewerRef}
+        activeCatId={activeCatId}
+        setActiveCatId={setActiveCatId}
       />
     </View>
   );

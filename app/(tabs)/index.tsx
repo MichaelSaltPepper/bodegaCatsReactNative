@@ -19,7 +19,7 @@ export default function Index() {
     async function initAuth() {
       // Get the current Supabase session
       const session = await db.auth.getSession();
-      console.log("my sesssion", session);
+      // console.log("my sesssion", session);
       if (session.data.session) {
         // sesssion.data.session.user.id
         const supabaseUserId = session.data.session.user.id;
