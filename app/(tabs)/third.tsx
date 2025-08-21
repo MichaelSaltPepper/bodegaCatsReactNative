@@ -13,26 +13,36 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { db } from "../../components/db/db";
-// display all submissions for the current user
-
-// TODO allow displaying of multiple images for cats in explore
-// TODO functions needed for admin
-// TODO add a small map view for preview
-// update submission status
-// TODO for acceptance: create pin, and cat entries
-// TODO allow map to update immediately
-//3. update this when the user makes a new submission, logs in, or logs out
-//4. make it extensible by adding admin functionalisties
+import {
+  db,
+  deletePinAndCat,
+  insertCat,
+  insertPin,
+  updateSubmission,
+} from "../../components/db/db";
 
 const bucket = "dev";
 const Third = () => {
-  // I want this to be a dictionary of file names (in the submission) to
-  // the link to access in the bucket
   // TODO make submissions show up right after submitting
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
   const [signedIn, setSignedIn] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+
+  async function submissionAction(submission: Submission) {
+    updateSubmission(submission);
+    if (submission.status === SubmissionStatus.Accepted) {
+      const new_pin_id = await insertPin(submission.lat, submission.lng);
+      await insertCat(submission, new_pin_id);
+      console.log("ENDING OF CREATION OF NEW CAT AND PIN");
+    } else {
+      // delete pin and cat if already created
+      // select cat_id, pin_id from inner join between cat and submission
+      // on submission.file_names = cat.file_name (and I only have access to
+      // submission originally )
+      //if I have a result then delete that cat and pin
+      await deletePinAndCat(submission);
+    }
+  }
 
   // retrive cats when signedIn changes
   async function retrieveSubmissions() {
@@ -102,27 +112,35 @@ const Third = () => {
     >
       <View style={{ flexDirection: "row" }}>
         <DoubleSwitch
-          onBothEnabled={() =>
-            setSubmissions((prevSubmissions) =>
-              makeNewSubmissionProps(
+          onBothEnabled={() => {
+            setSubmissions((prevSubmissions) => {
+              const newSubValues = makeNewSubmissionProps(
                 index,
                 SubmissionStatus.Rejected,
                 prevSubmissions
-              )
-            )
-          }
+              );
+              // update status to rejected
+              submissionAction(newSubValues[index]);
+              return newSubValues;
+            });
+          }}
           title={"Reject"}
         />
         <DoubleSwitch
-          onBothEnabled={() =>
-            setSubmissions((prevSubmissions) =>
-              makeNewSubmissionProps(
+          onBothEnabled={() => {
+            setSubmissions((prevSubmissions) => {
+              const newSubValues = makeNewSubmissionProps(
                 index,
                 SubmissionStatus.Accepted,
                 prevSubmissions
-              )
-            )
-          }
+              );
+              // update status to accepted
+              // create entriy in Pin, get the new pin_id
+              // create new entry in Cat
+              submissionAction(newSubValues[index]);
+              return newSubValues;
+            });
+          }}
           title={"Accept"}
         />
       </View>
