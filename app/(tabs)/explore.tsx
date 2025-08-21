@@ -1,8 +1,8 @@
-import { CatViewer } from "@/components/CatViewer";
-import { Buttons } from "@/components/ui/Buttons";
-import { UserHint } from "@/components/ui/UserHint";
-import UserMap from "@/components/UserMap/UserMap";
-import type { Cat, Pin } from "constants/DataTypes";
+import type { Cat, Pin } from "@/components/DataTypes";
+import { CatViewer } from "@/components/ExplorePage/CatViewer";
+import { Buttons } from "@/components/ExplorePage/Navigation/Buttons";
+import { UserHint } from "@/components/ExplorePage/Navigation/UserHint";
+import UserMap from "@/components/ExplorePage/UserMap";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { db, getPins, retrieveCats } from "../../components/db/db";

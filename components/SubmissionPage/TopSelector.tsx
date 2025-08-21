@@ -1,5 +1,5 @@
 import { Text, TouchableOpacity, View } from "react-native";
-import { getStatusEmoji } from "./Utils/Utils";
+import { getStatusEmoji } from "../Utils/FrontEndContanstsAndUtils";
 export const TopSelector = ({
   options,
   selected,

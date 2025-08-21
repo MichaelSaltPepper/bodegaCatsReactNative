@@ -1,13 +1,13 @@
-import type { Cat, Pin, Submission, User } from "@/constants/DataTypes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import { Alert } from "react-native";
+import type { Cat, Pin, Submission, User } from "../DataTypes";
 import {
   bucketUploadURL,
   supabaseAnonKey,
   supabaseUrl,
 } from "../Utils/Credentials";
-import { mimeTypes } from "../Utils/Utils";
+import { mimeTypes } from "../Utils/FrontEndContanstsAndUtils";
 export const db = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,

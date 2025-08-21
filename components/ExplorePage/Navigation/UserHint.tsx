@@ -1,6 +1,5 @@
 import { Text, View } from "react-native";
-import CustomModal from "../../components/CustomModal";
-
+import CustomModal from "./CustomModal";
 type UserHintProps = {
   setLocationHintModalVisible: (val: boolean) => void;
   locationHintModalVisible: boolean;

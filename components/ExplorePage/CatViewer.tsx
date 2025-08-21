@@ -1,9 +1,6 @@
-import type { Cat, Pin } from "@/constants/DataTypes";
-import { UNNAMED_CAT } from "@/constants/DataTypes";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
-  ActivityIndicator,
   Animated,
   Button,
   FlatList,
@@ -13,10 +10,11 @@ import {
   Text,
   View,
 } from "react-native";
-import { db } from "./db/db";
-import { bucket } from "./Utils/Credentials";
-
+import { Cat, Pin } from "../DataTypes";
+import { bucket, supabaseUrl } from "../Utils/Credentials";
+import { UNNAMED_CAT } from "../Utils/FrontEndContanstsAndUtils";
 import { CatUploadForm } from "./CatUploadForm";
+
 type CatViewerProps = {
   addingCat: boolean;
   expanded: boolean;
@@ -61,10 +59,6 @@ export const CatViewer: React.FC<CatViewerProps> = ({
   setUploadImages,
   setCatHasDescription,
 }) => {
-  // refactor so its file names to URLS, not
-  // cat id to urls
-  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
-
   const CatItem = ({ cat }: { cat: Cat }) => (
     <View style={{ marginBottom: 20 }}>
       <Text>
@@ -72,13 +66,15 @@ export const CatViewer: React.FC<CatViewerProps> = ({
         {cat.description.length === 0 ? "No description" : cat.description}
       </Text>
       {cat.file_name.split(",").map((file_name, i) => {
-        return imageUrls[file_name] ? (
+        return (
           <View key={file_name}>
             <Text style={{ fontSize: 18, fontWeight: "bold", bottom: 5 }}>
               {i + 1}.
             </Text>
             <Image
-              source={{ uri: imageUrls[file_name] }}
+              source={{
+                uri: `${supabaseUrl}/storage/v1/object/public/${bucket}/${file_name}`,
+              }}
               style={{
                 width: 300,
                 height: 300,
@@ -87,8 +83,6 @@ export const CatViewer: React.FC<CatViewerProps> = ({
               }}
             />
           </View>
-        ) : (
-          <ActivityIndicator key={file_name} />
         );
       })}
     </View>
@@ -103,27 +97,6 @@ export const CatViewer: React.FC<CatViewerProps> = ({
       useNativeDriver: false,
     }).start();
   }, [expanded, animation]);
-
-  useEffect(() => {
-    cats.forEach((cat) => {
-      cat.file_name.split(",").forEach((file) => {
-        if (!imageUrls[file]) {
-          fetchSignedImageUrl(file);
-        }
-      });
-    });
-  }, [cats, imageUrls]);
-
-  const fetchSignedImageUrl = async (file_path: string) => {
-    try {
-      const { data } = db.storage.from(bucket).getPublicUrl(file_path);
-
-      console.log("signedUrl", data.publicUrl);
-      setImageUrls((prev) => ({ ...prev, [file_path]: data.publicUrl }));
-    } catch (err) {
-      console.error("Error fetching image URL:", err);
-    }
-  };
 
   const height = animation.interpolate({
     inputRange: [0, 1],

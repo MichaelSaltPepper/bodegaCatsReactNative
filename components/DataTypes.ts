@@ -18,4 +18,3 @@ export type Submission = {
   status: string;
   user_id: string;
 };
-export const UNNAMED_CAT = "Anonymous Kitty Car 🐱🐈🚗";

@@ -1,102 +1,64 @@
 import { useUpload } from "@/components/context/UploadContext";
-import { SubmissionItem } from "@/components/SubmissionsItem";
-import { TopSelector } from "@/components/TopSelector";
-import { SubmissionStatus } from "@/constants/FrontEndContansts";
-import type { Submission } from "constants/DataTypes";
+import type { Submission } from "@/components/DataTypes";
+import { SubmissionItem } from "@/components/SubmissionPage/SubmissionsItem";
+import { TopSelector } from "@/components/SubmissionPage/TopSelector";
+import { SubmissionStatus } from "@/components/Utils/FrontEndContanstsAndUtils";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { FlatList, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 import { db, fetchSubmissionsForUser } from "../../components/db/db";
 // for CatViewer and this page
 // I want to be able to make the other update itself
 // update CatViewer on Accept/Reject
 // update this when a new cat is submitted
 
-const bucket = "dev";
 const Third = () => {
+  const queryClient = useQueryClient();
+
+  // context to upate submissions
   const { uploadCompleted, setUploadCompleted } = useUpload();
-  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
-  const [signedIn, setSignedIn] = useState(false);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+
   const [selectedOption, setSelectedOption] = useState<string>(
     SubmissionStatus.Pending
-  ); // default selection
+  );
 
-  // retrive cats when signedIn changes
-  async function retrieveSubmissions() {
-    const { submissions, isAdmin } = await fetchSubmissionsForUser();
-    setSubmissions(submissions);
-    setIsAdmin(isAdmin);
-  }
+  const {
+    data: submissionsData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["submissions"],
+    queryFn: fetchSubmissionsForUser, // must return { submissions, isAdmin }
+  });
 
-  // fetch links for images when cats change
+  const submissions = submissionsData?.submissions ?? [];
+  const isAdmin = submissionsData?.isAdmin ?? false;
+
+  // ckear admin flag and submissions on log out
   useEffect(() => {
-    submissions.forEach((submission) => {
-      submission.file_names.split(",").forEach((file_name) => {
-        if (!imageUrls[file_name]) {
-          fetchSignedImageUrl(file_name);
-        }
-      });
-    });
-  }, [submissions, imageUrls]);
-
-  // set signed in status
-  useEffect(() => {
-    async function initAuth() {
-      // Get the current Supabase session
-      const session = await db.auth.getSession();
-
-      if (session.data.session) {
-        setSignedIn(true);
-
-        // Check if provider is Google
-      } else {
-        setSignedIn(false);
-      }
-    }
-
-    initAuth();
-
-    // Listen for auth state changes (SIGN_IN / SIGN_OUT)
-    const { data: listener } = db.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") {
-        setSignedIn(true);
-      } else if (event === "SIGNED_OUT") {
-        setSignedIn(false);
+    const { data: listener } = db.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        queryClient.removeQueries({ queryKey: ["submissions"] });
       }
     });
 
     return () => listener.subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!signedIn) {
-      setSubmissions([]);
-    } else {
-      // initialize the cats
-      retrieveSubmissions();
-    }
-    setIsAdmin(false);
-  }, [signedIn]);
+  }, [queryClient]);
 
   useEffect(() => {
     if (uploadCompleted) {
-      retrieveSubmissions();
+      refetch();
       setUploadCompleted(false);
     }
-  }, [uploadCompleted, setUploadCompleted]);
+  }, [uploadCompleted, refetch, setUploadCompleted]);
 
-  const fetchSignedImageUrl = async (file_path: string) => {
-    try {
-      const { data } = db.storage.from(bucket).getPublicUrl(file_path);
+  console.log(submissions);
+  console.log("imageURLLLSSS");
 
-      console.log("signedUrl", data.publicUrl);
-      console.log("file path", file_path);
-      setImageUrls((prev) => ({ ...prev, [file_path]: data.publicUrl }));
-    } catch (err) {
-      console.error("Error fetching image URL:", err);
-    }
-  };
+  if (isLoading) return <Text>Loading...</Text>;
+  if (error) return <Text>Error loading submissions</Text>;
+
   return (
     <View
       style={{
@@ -120,8 +82,6 @@ const Third = () => {
             index={index}
             submissions={submissions}
             isAdmin={isAdmin}
-            setSubmissions={setSubmissions}
-            imageUrls={imageUrls}
           />
         )}
       />

@@ -1,4 +1,4 @@
-import type { Pin } from "@/constants/DataTypes";
+import type { Pin } from "@/components/DataTypes";
 import { Button, StyleSheet, View } from "react-native";
 type ButtonsProps = {
   signedIn: boolean;

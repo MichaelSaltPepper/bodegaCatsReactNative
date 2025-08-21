@@ -1,16 +1,19 @@
-import type { Submission } from "@/constants/DataTypes";
-import { SubmissionStatus } from "@/constants/FrontEndContansts";
-import { UNNAMED_CAT } from "constants/DataTypes";
-
-import DoubleSwitch from "@/components/DoubleSwitch";
-import { ActivityIndicator, Image, Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import type { Submission } from "../DataTypes";
+import { bucket, supabaseUrl } from "../Utils/Credentials";
+import {
+  SubmissionStatus,
+  UNNAMED_CAT,
+} from "../Utils/FrontEndContanstsAndUtils";
+import DoubleSwitch from "./DoubleSwitch";
+
 import {
   deletePinAndCat,
   insertCat,
   insertPin,
   updateSubmission,
-} from "./db/db";
+} from "../db/db";
 
 const makeNewSubmissionProps = (
   index: number,
@@ -27,15 +30,11 @@ export const SubmissionItem = ({
   index,
   submissions,
   isAdmin,
-  setSubmissions,
-  imageUrls,
 }: {
   submission: Submission;
   index: number;
   submissions: Submission[];
   isAdmin: boolean;
-  setSubmissions: React.Dispatch<React.SetStateAction<Submission[]>>;
-  imageUrls: Record<string, string>;
 }) => {
   async function submissionAction(submission: Submission) {
     updateSubmission(submission);
@@ -95,8 +94,10 @@ export const SubmissionItem = ({
           />
         </View>
       )}
+      {/* TODO allow sbumission mutations */}
       <Text>
-        Name: {submission.name.length > 0 ? submission.name : UNNAMED_CAT}
+        TODODODODODOD submissions update Name:{" "}
+        {submission.name.length > 0 ? submission.name : UNNAMED_CAT}
       </Text>
       <Text style={{ marginBottom: 15 }}>
         Description:{" "}
@@ -119,13 +120,15 @@ export const SubmissionItem = ({
       </MapView>
       <View>
         {submission.file_names.split(",").map((file_name, i) => {
-          return imageUrls[file_name] ? (
+          return (
             <View key={file_name}>
               <Text style={{ fontSize: 18, fontWeight: "bold", bottom: 5 }}>
                 {i + 1}/{submission.file_names.split(",").length}
               </Text>
               <Image
-                source={{ uri: imageUrls[file_name] }}
+                source={{
+                  uri: `${supabaseUrl}/storage/v1/object/public/${bucket}/${file_name}`,
+                }}
                 style={{
                   width: 300,
                   height: 300,
@@ -134,8 +137,6 @@ export const SubmissionItem = ({
                 }}
               />
             </View>
-          ) : (
-            <ActivityIndicator key={file_name} />
           );
         })}
       </View>

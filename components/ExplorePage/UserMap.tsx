@@ -1,6 +1,6 @@
-import type { Pin } from "constants/DataTypes";
 import { StyleSheet } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import type { Pin } from "../DataTypes";
 
 // newMarker represents the marker for new cat
 // markers is all of the pins
@@ -10,6 +10,8 @@ type UserMapProps = {
   setNewMarker: (pin: Pin) => void;
 };
 
+// TODO: clicking on a pin should should move the CatViewer to
+// to looing at the associated cat
 export default function UserMap({
   markers,
   newMarker,

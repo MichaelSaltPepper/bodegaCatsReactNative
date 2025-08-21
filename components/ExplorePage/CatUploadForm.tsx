@@ -1,5 +1,3 @@
-import type { Pin } from "@/constants/DataTypes";
-import { UNNAMED_CAT } from "@/constants/DataTypes";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
@@ -16,8 +14,11 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useUpload } from "./context/UploadContext";
-import { makeSubmissonDb } from "./db/db";
+import { useUpload } from "../context/UploadContext";
+import type { Pin } from "../DataTypes";
+import { makeSubmissonDb } from "../db/db";
+import { UNNAMED_CAT } from "../Utils/FrontEndContanstsAndUtils";
+
 type CatUplormProps = {
   addingCat: boolean;
   expanded: boolean;

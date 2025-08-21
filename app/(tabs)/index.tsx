@@ -1,5 +1,5 @@
-import { createUserName } from "constants/createUserName";
-import type { User } from "constants/DataTypes";
+import type { User } from "@/components/DataTypes";
+import { createUserName } from "@/components/Utils/FrontEndContanstsAndUtils";
 import React, { useEffect, useState } from "react";
 import { Alert, Button, Text, View } from "react-native";
 import { db } from "../../components/db/db";
