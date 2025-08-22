@@ -1,5 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   Animated,
   Button,
@@ -11,6 +11,7 @@ import {
   View,
   ViewToken,
 } from "react-native";
+import MapView from "react-native-maps";
 import { Cat, Pin } from "../DataTypes";
 import { bucket, supabaseUrl } from "../Utils/Credentials";
 import { UNNAMED_CAT } from "../Utils/FrontEndContanstsAndUtils";
@@ -40,6 +41,8 @@ type CatViewerProps = {
   ref: React.RefObject<FlatList<any> | null>;
   activeCatId: number;
   setActiveCatId: React.Dispatch<React.SetStateAction<number>>;
+  mapRef: React.RefObject<MapView | null>;
+  markers: Pin[];
 };
 
 export const CatViewer: React.FC<CatViewerProps> = ({
@@ -65,6 +68,8 @@ export const CatViewer: React.FC<CatViewerProps> = ({
   ref,
   activeCatId,
   setActiveCatId,
+  mapRef,
+  markers,
 }) => {
   const CatItem = ({ cat, index }: { cat: Cat; index: number }) => (
     <View style={{ marginBottom: 20 }}>
@@ -108,17 +113,30 @@ export const CatViewer: React.FC<CatViewerProps> = ({
 
   const height = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, boxShift ? 500 : 300], // collapsed height -> expanded height
+    outputRange: [0, boxShift ? 500 : 400], // collapsed height -> expanded height
   });
 
-  const onViewableItemsChanged = useRef(
+  const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0) {
-        const activeCatId = (viewableItems[0].item as Cat).id;
-        setActiveCatId(activeCatId);
+        const activeCat = viewableItems[0].item as Cat;
+        setActiveCatId(activeCat.id);
+        const pin = markers.filter((marker) => marker.id === activeCat.pin_id);
+        if (pin.length > 0) {
+          mapRef.current?.animateToRegion(
+            {
+              latitude: pin[0].lat - 0.08,
+              longitude: pin[0].lng,
+              latitudeDelta: 0.3,
+              longitudeDelta: 0.3,
+            },
+            500
+          );
+        }
       }
-    }
-  ).current;
+    },
+    [markers, mapRef, setActiveCatId] // re-memoize when markers change
+  );
   return (
     <View style={{ ...styles.containerBottom, bottom: boxShift ? 90 : 100 }}>
       <Pressable

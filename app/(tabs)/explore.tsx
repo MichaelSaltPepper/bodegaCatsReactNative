@@ -126,6 +126,8 @@ export default function App() {
         ref={catViewerRef}
         activeCatId={activeCatId}
         setActiveCatId={setActiveCatId}
+        mapRef={mapRef}
+        markers={markers}
       />
     </View>
   );
