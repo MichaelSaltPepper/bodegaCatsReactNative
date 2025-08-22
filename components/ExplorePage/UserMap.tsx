@@ -1,5 +1,5 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import MapView, { Callout, Marker } from "react-native-maps";
 import type { Cat, Pin } from "../DataTypes";
@@ -13,6 +13,12 @@ type UserMapProps = {
   cats: Cat[];
   activeCatId: number;
   setExpanded: (val: boolean) => void;
+  mapRef: React.RefObject<MapView | null>;
+};
+
+type MarkerRef = {
+  showCallout: () => void;
+  hideCallout?: () => void;
 };
 
 // TODO: clicking on a pin should should move the CatViewer to
@@ -25,16 +31,57 @@ export default function UserMap({
   cats,
   activeCatId,
   setExpanded,
+  mapRef,
 }: UserMapProps) {
+  const { latitudeDelta, longitudeDelta } = {
+    latitudeDelta: 0.3,
+    longitudeDelta: 0.3,
+  };
+  const markerRefs = useRef<{ [key: number]: MarkerRef | null }>({});
   const [debouncedActiveCatId, setDebouncedActiveCatId] = useState(activeCatId);
 
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedActiveCatId(activeCatId);
-    }, 100); // debounce 100ms, adjust as needed
+    }, 250); // debounce 100ms, adjust as needed
 
     return () => clearTimeout(handler);
   }, [activeCatId]);
+
+  const prevActiveCatId = useRef<number | null>(null);
+
+  useEffect(() => {
+    const activeCat = cats.find((cat) => cat.id === debouncedActiveCatId);
+    if (!activeCat) return;
+
+    // Hide previous callout
+    if (
+      prevActiveCatId.current !== null &&
+      prevActiveCatId.current !== activeCat.id
+    ) {
+      const prevMarker =
+        markerRefs.current[
+          cats.find((c) => c.id === prevActiveCatId.current)?.pin_id!
+        ];
+      prevMarker?.hideCallout?.();
+    }
+
+    // Show new callout
+    const activeMarker = markerRefs.current[activeCat.pin_id];
+    activeMarker?.showCallout?.();
+    // const { lat, lng }e = markers.find((m) => m.id === activeCat.pin_id)!;
+    console.log("new lat");
+
+    prevActiveCatId.current = activeCat.id;
+  }, [
+    debouncedActiveCatId,
+    cats,
+    latitudeDelta,
+    longitudeDelta,
+    markers,
+    mapRef,
+  ]);
+
   console.log(
     "debugMe",
     activeCatId,
@@ -46,12 +93,13 @@ export default function UserMap({
   );
   return (
     <MapView
+      ref={mapRef}
       style={styles.map}
       initialRegion={{
         latitude: 40.7,
         longitude: -73.93,
-        latitudeDelta: 0.3,
-        longitudeDelta: 0.3,
+        latitudeDelta,
+        longitudeDelta,
       }}
     >
       {newMarker && (
@@ -78,6 +126,9 @@ export default function UserMap({
         console.log("marker", marker, index);
         return (
           <Marker
+            ref={(r) => {
+              markerRefs.current[marker.id] = r;
+            }}
             onPress={() => {
               const index = cats.findIndex(
                 (cat) => Number(cat.pin_id) === Number(marker.id)
@@ -86,6 +137,15 @@ export default function UserMap({
               if (index !== -1) {
                 ref.current?.scrollToIndex({ index, animated: true });
                 setExpanded(true);
+                mapRef.current?.animateToRegion(
+                  {
+                    latitude: marker.lat - 0.08,
+                    longitude: marker.lng,
+                    latitudeDelta,
+                    longitudeDelta,
+                  },
+                  500 // duration in ms
+                );
               }
             }}
             key={marker.id}

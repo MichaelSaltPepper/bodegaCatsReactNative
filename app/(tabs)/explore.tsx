@@ -5,9 +5,15 @@ import { UserHint } from "@/components/ExplorePage/Navigation/UserHint";
 import UserMap from "@/components/ExplorePage/UserMap";
 import React, { useEffect, useRef, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
+import MapView from "react-native-maps";
 import { db, getPins, retrieveCats } from "../../components/db/db";
+// type MarkerRef = {
+//   showCallout: () => void;
+//   hideCallout?: () => void;
+// };
 
 export default function App() {
+  const mapRef = useRef<MapView | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [newMarker, setNewMarker] = useState<Pin | null>(null);
   const [addingCat, setAddingCat] = useState(false);
@@ -76,6 +82,7 @@ export default function App() {
         cats={cats}
         activeCatId={activeCatId}
         setExpanded={setExpanded}
+        mapRef={mapRef}
       />
       <UserHint
         locationHintModalVisible={locationHintModalVisible}

@@ -113,7 +113,6 @@ export const CatViewer: React.FC<CatViewerProps> = ({
 
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      console.log("viewableItems", viewableItems);
       if (viewableItems.length > 0) {
         const activeCatId = (viewableItems[0].item as Cat).id;
         setActiveCatId(activeCatId);
@@ -172,7 +171,6 @@ export const CatViewer: React.FC<CatViewerProps> = ({
         />
         <FlatList
           ref={ref}
-          // viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
           style={{ display: addingCat ? "none" : "flex" }}
           onViewableItemsChanged={onViewableItemsChanged}
           keyExtractor={(cat: Cat) => cat.id.toString()}
