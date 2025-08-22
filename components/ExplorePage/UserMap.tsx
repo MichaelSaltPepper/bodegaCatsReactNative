@@ -14,6 +14,7 @@ type UserMapProps = {
   activeCatId: number;
   setExpanded: (val: boolean) => void;
   mapRef: React.RefObject<MapView | null>;
+  addingCat: boolean;
 };
 
 type MarkerRef = {
@@ -32,6 +33,7 @@ export default function UserMap({
   activeCatId,
   setExpanded,
   mapRef,
+  addingCat,
 }: UserMapProps) {
   const { latitudeDelta, longitudeDelta } = {
     latitudeDelta: 0.3,
@@ -104,9 +106,6 @@ export default function UserMap({
     >
       {newMarker && (
         <Marker
-          // ref={(ref) => {
-          //   if (ref) markerRefs.current[marker.id] = ref;
-          // }}
           coordinate={{ latitude: newMarker.lat, longitude: newMarker.lng }}
           pinColor="blue" // differentiate new marker
           title="New Cat"
@@ -122,73 +121,74 @@ export default function UserMap({
           }}
         />
       )}
-      {markers.map((marker, index) => {
-        console.log("marker", marker, index);
-        return (
-          <Marker
-            ref={(r) => {
-              markerRefs.current[marker.id] = r;
-            }}
-            onPress={() => {
-              const index = cats.findIndex(
-                (cat) => Number(cat.pin_id) === Number(marker.id)
-              );
-              console.log("opnress", cats, markers, marker, index);
-              if (index !== -1) {
-                ref.current?.scrollToIndex({ index, animated: true });
-                setExpanded(true);
-                mapRef.current?.animateToRegion(
-                  {
-                    latitude: marker.lat - 0.08,
-                    longitude: marker.lng,
-                    latitudeDelta,
-                    longitudeDelta,
-                  },
-                  500 // duration in ms
-                );
-              }
-            }}
-            key={marker.id}
-            coordinate={{ latitude: marker.lat, longitude: marker.lng }}
-            calloutAnchor={{ x: 0.5, y: -0.2 }}
-            anchor={{ x: 0.5, y: 1 }}
-            pinColor={
-              marker.id ===
-              cats.filter((cat) => cat.id === debouncedActiveCatId)[0]?.pin_id
-                ? "yellow"
-                : "red"
-            }
-          >
-            <View
-              style={{
-                width: 60,
-                height: 60,
-                alignItems: "center",
-                justifyContent: "flex-end",
+      {!addingCat &&
+        markers.map((marker, index) => {
+          console.log("marker", marker, index);
+          return (
+            <Marker
+              ref={(r) => {
+                markerRefs.current[marker.id] = r;
               }}
+              onPress={() => {
+                const index = cats.findIndex(
+                  (cat) => Number(cat.pin_id) === Number(marker.id)
+                );
+                console.log("opnress", cats, markers, marker, index);
+                if (index !== -1) {
+                  ref.current?.scrollToIndex({ index, animated: true });
+                  setExpanded(true);
+                  mapRef.current?.animateToRegion(
+                    {
+                      latitude: marker.lat - 0.08,
+                      longitude: marker.lng,
+                      latitudeDelta,
+                      longitudeDelta,
+                    },
+                    500 // duration in ms
+                  );
+                }
+              }}
+              key={marker.id}
+              coordinate={{ latitude: marker.lat, longitude: marker.lng }}
+              calloutAnchor={{ x: 0.5, y: -0.2 }}
+              anchor={{ x: 0.5, y: 1 }}
+              pinColor={
+                marker.id ===
+                cats.filter((cat) => cat.id === debouncedActiveCatId)[0]?.pin_id
+                  ? "yellow"
+                  : "red"
+              }
             >
-              {marker.id ===
-              cats.filter((cat) => cat.id === debouncedActiveCatId)[0]
-                ?.pin_id ? (
-                <MaterialIcons name="location-pin" size={60} color="yellow" />
-              ) : (
-                <MaterialIcons name="location-pin" size={40} color="red" />
-              )}
-            </View>
-            <Callout>
-              <View style={{ width: 50, alignItems: "center" }}>
-                <Text>
-                  {cats.findIndex((cat) => cat.pin_id === marker.id) !== -1
-                    ? cats[
-                        cats.findIndex((cat) => cat.pin_id === marker.id)
-                      ].id?.toString()
-                    : "-1"}
-                </Text>
+              <View
+                style={{
+                  width: 60,
+                  height: 60,
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                }}
+              >
+                {marker.id ===
+                cats.filter((cat) => cat.id === debouncedActiveCatId)[0]
+                  ?.pin_id ? (
+                  <MaterialIcons name="location-pin" size={60} color="yellow" />
+                ) : (
+                  <MaterialIcons name="location-pin" size={40} color="red" />
+                )}
               </View>
-            </Callout>
-          </Marker>
-        );
-      })}
+              <Callout>
+                <View style={{ width: 50, alignItems: "center" }}>
+                  <Text>
+                    {cats.findIndex((cat) => cat.pin_id === marker.id) !== -1
+                      ? cats[
+                          cats.findIndex((cat) => cat.pin_id === marker.id)
+                        ].id?.toString()
+                      : "-1"}
+                  </Text>
+                </View>
+              </Callout>
+            </Marker>
+          );
+        })}
     </MapView>
   );
 }

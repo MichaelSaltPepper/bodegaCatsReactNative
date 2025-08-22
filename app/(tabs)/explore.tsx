@@ -83,6 +83,7 @@ export default function App() {
         activeCatId={activeCatId}
         setExpanded={setExpanded}
         mapRef={mapRef}
+        addingCat={addingCat}
       />
       <UserHint
         locationHintModalVisible={locationHintModalVisible}
