@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import { Alert } from "react-native";
-import type { Cat, Pin, Submission, User } from "../DataTypes";
+import type { Cat, DBCat, Pin, Submission, User } from "../DataTypes";
 import {
   bucketUploadURL,
   supabaseAnonKey,
@@ -111,23 +111,45 @@ export async function insertPin(lat: number, lng: number): Promise<number> {
 
 export async function retrieveCats(setCats: (cats: Cat[]) => void) {
   try {
-    const { data, error, status } = await db.from("Cat").select("*");
+    const { data, error, status } = await db.from("Cat").select(
+      `
+        id,
+        name,
+        description,
+        pin_id,
+        file_name,
+        user_id,
+        User:user_id ( user_name ),
+        Pin:pin_id ( created_at )
+      `
+    );
+
     if (error && status !== 406) {
       throw error;
     }
+
     if (data) {
-      const newCats: Cat[] = data.map((row: Cat) => ({
-        description: row.description,
-        pin_id: row.pin_id,
-        id: row.id,
-        name: row.name,
-        file_name: row.file_name,
-        user_id: row.user_id,
-      }));
+      const newCats: Cat[] = (data as DBCat[]).map((row) => {
+        console.log(row);
+        return {
+          id: row.id,
+          name: row.name,
+          description: row.description,
+          pin_id: row.pin_id,
+          file_name: row.file_name,
+          user_id: row.user_id,
+          // @ts-ignore
+          user_name: row.User.user_name,
+          // @ts-ignore
+          created_at: row.Pin.created_at,
+        };
+      });
+
       setCats(newCats);
     }
   } catch (error) {
     if (error instanceof Error) {
+      console.error("Error retrieving cats:", error.message);
     }
   }
 }

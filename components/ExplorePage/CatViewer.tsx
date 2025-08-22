@@ -2,7 +2,6 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef } from "react";
 import {
   Animated,
-  Button,
   FlatList,
   Image,
   Pressable,
@@ -45,6 +44,19 @@ type CatViewerProps = {
   markers: Pin[];
 };
 
+function formatTimestamp(timestamp: string) {
+  const dateStr = new Date(timestamp).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeStr = new Date(timestamp).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${dateStr} at ${timeStr}`;
+}
+
 export const CatViewer: React.FC<CatViewerProps> = ({
   addingCat,
   expanded,
@@ -72,10 +84,23 @@ export const CatViewer: React.FC<CatViewerProps> = ({
   markers,
 }) => {
   const CatItem = ({ cat, index }: { cat: Cat; index: number }) => (
-    <View style={{ marginBottom: 20 }}>
-      <Text>Cat ID: {cat.id}</Text>
+    <View style={{ marginBottom: 20, alignItems: "center" }}>
+      {/* TODO how to get user and date */}
+      <Text
+        style={{
+          fontWeight: "bold",
+          fontSize: 15, // adjust as needed
+          marginVertical: 3, // optional spacing
+        }}
+      >
+        Cat ID: {cat.id}
+      </Text>
+      <Text style={styles.text}>
+        Uploaded by: {cat.user_name} on {formatTimestamp(cat.created_at)}
+      </Text>
+      <Text>Name: {cat.name.length === 0 ? UNNAMED_CAT : cat.name}</Text>
       <Text>
-        {cat.name.length === 0 ? UNNAMED_CAT : cat.name} -{" "}
+        Description:{" "}
         {cat.description.length === 0 ? "No description" : cat.description}
       </Text>
       {cat.file_name.split(",").map((file_name, i) => {
@@ -140,6 +165,7 @@ export const CatViewer: React.FC<CatViewerProps> = ({
   return (
     <View style={{ ...styles.containerBottom, bottom: boxShift ? 90 : 100 }}>
       <Pressable
+        style={{ alignSelf: "flex-start", left: 10 }}
         onPress={() => {
           if (!(addingCat && !confirmLocation)) {
             setExpanded(!expanded);
@@ -164,11 +190,16 @@ export const CatViewer: React.FC<CatViewerProps> = ({
         </View>
       </Pressable>
       <Animated.View style={[styles.box, { height }]}>
-        <Text>
+        <Text
+          style={{
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: 12, // adjust as needed
+            marginVertical: 3, // optional spacing
+          }}
+        >
           {" "}
-          TODO useQUETY activeCatId{activeCatId}
           {addingCat ? "New Cat Details" : "All Cats View"}
-          {signedIn ? "true" : "flase"} {cats.length} Cats loaded
         </Text>
 
         <CatUploadForm
@@ -189,19 +220,34 @@ export const CatViewer: React.FC<CatViewerProps> = ({
         />
         <FlatList
           ref={ref}
-          style={{ display: addingCat ? "none" : "flex" }}
+          style={{ display: addingCat ? "none" : "flex", width: "100%" }}
           onViewableItemsChanged={onViewableItemsChanged}
           keyExtractor={(cat: Cat) => cat.id.toString()}
           data={cats}
           renderItem={({ item, index }) => <CatItem cat={item} index={index} />}
         />
-        <Button title="debug" onPress={() => console.log("debug", cats)} />
       </Animated.View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  containerBottom: { position: "absolute", left: 20, right: 20, zIndex: 20 },
-  box: { backgroundColor: "white", padding: 10 },
+  containerBottom: {
+    position: "absolute",
+    left: 0, // full width
+    right: 0,
+    zIndex: 20,
+    alignItems: "center", // center children horizontally
+  },
+  box: {
+    backgroundColor: "white",
+    padding: 10,
+    width: "95%", // or "100%" if you want full width minus margins
+    alignItems: "center", // center children horizontally
+  },
+  text: {
+    textAlign: "center",
+    fontSize: 12, // adjust as needed
+    marginVertical: 3, // optional spacing
+  },
 });
